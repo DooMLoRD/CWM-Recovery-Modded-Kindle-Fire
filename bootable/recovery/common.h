@@ -23,11 +23,14 @@
 void ui_init();
 
 // Use KEY_* codes from <linux/input.h> or KEY_DREAM_* from "minui/minui.h".
-int ui_wait_key();            // waits for a key/button press, returns the code
+struct keyStruct *ui_wait_key();            // waits for a key/button press, returns the code
 int ui_key_pressed(int key);  // returns >0 if the code is currently pressed
 int ui_text_visible();        // returns >0 if text log is currently visible
 void ui_show_text(int visible);
 void ui_clear_key_queue();
+
+// handle the user input events (mainly the touch events) inside the ui handler
+int device_handle_mouse(struct keyStruct *key, int visible);
 
 // Write a message to the on-screen log shown with Alt-L (also to stderr).
 // The screen is small, and users may need to report these messages to support,
@@ -62,6 +65,27 @@ enum {
   BACKGROUND_ICON_FIRMWARE_ERROR,
   NUM_BACKGROUND_ICONS
 };
+
+//Stuff related to touch menu buttons
+enum {
+  MENU_BACK,
+  MENU_DOWN,
+  MENU_UP,
+  MENU_SELECT,
+  MENU_BACK_M,
+  MENU_DOWN_M,
+  MENU_UP_M,
+  MENU_SELECT_M,
+  NUM_MENU_ICON
+};
+
+//Struct to return key events to recovery.c through ui_wait_key()
+struct keyStruct{
+	int code;
+	int x;
+	int y;
+};
+
 void ui_set_background(int icon);
 
 // Get a malloc'd copy of the screen image showing (only) the specified icon.

@@ -43,6 +43,7 @@
 #include "mtdutils/mtdutils.h"
 #include "bmlutils/bmlutils.h"
 
+#define ABS_MT_POSITION_X 0x35  /* Center X ellipse position */
 
 int signature_check_enabled = 1;
 int script_assert_enabled = 1;
@@ -83,30 +84,24 @@ char* INSTALL_MENU_ITEMS[] = {  "choose zip from sdcard",
                                 "apply /sdcard/update.zip",
                                 "toggle signature verification",
                                 "toggle script asserts",
-/* DooMLoRD: FIX for SEMC devices */
-/*
                                 "choose zip from internal sdcard",
-*/
                                 NULL };
 #define ITEM_CHOOSE_ZIP       0
 #define ITEM_APPLY_SDCARD     1
 #define ITEM_SIG_CHECK        2
 #define ITEM_ASSERTS          3
-/* DooMLoRD: FIX for SEMC devices */
-/*
 #define ITEM_CHOOSE_ZIP_INT   4
-*/
+
 void show_install_update_menu()
 {
     static char* headers[] = {  "Apply update from .zip file on SD card",
                                 "",
                                 NULL
     };
-/* DooMLoRD: FIX for SEMC devices */
-/*
+    
     if (volume_for_path("/emmc") == NULL)
         INSTALL_MENU_ITEMS[ITEM_CHOOSE_ZIP_INT] = NULL;
-*/    
+    
     for (;;)
     {
         int chosen_item = get_menu_selection(headers, INSTALL_MENU_ITEMS, 0, 0);
@@ -127,12 +122,9 @@ void show_install_update_menu()
             case ITEM_CHOOSE_ZIP:
                 show_choose_zip_menu("/sdcard/");
                 break;
-/* DooMLoRD: FIX for SEMC devices */
-/*
             case ITEM_CHOOSE_ZIP_INT:
                 show_choose_zip_menu("/emmc/");
                 break;
-*/
             default:
                 return;
         }
@@ -755,51 +747,6 @@ void show_nandroid_advanced_restore_menu(const char* path)
                                 NULL
     };
 
-/* DooMLoRD: FIX for SEMC devices */
-
-    static char* list[] = { "Restore system",
-                            "Restore data",
-                            "Restore cache",
-                            "Restore sd-ext",
-                            "Restore wimax",
-                            NULL
-    };
-    
-    char tmp[PATH_MAX];
-    if (0 != get_partition_device("wimax", tmp)) {
-        // disable wimax restore option
-        list[4] = NULL;
-    }
-
-    static char* confirm_restore  = "Confirm restore?";
-
-    int chosen_item = get_menu_selection(headers, list, 0, 0);
-    switch (chosen_item)
-    {
-        case 0:
-            if (confirm_selection(confirm_restore, "Yes - Restore system"))
-                nandroid_restore(file, 0, 1, 0, 0, 0, 0);
-            break;
-        case 1:
-            if (confirm_selection(confirm_restore, "Yes - Restore data"))
-                nandroid_restore(file, 0, 0, 1, 0, 0, 0);
-            break;
-        case 2:
-            if (confirm_selection(confirm_restore, "Yes - Restore cache"))
-                nandroid_restore(file, 0, 0, 0, 1, 0, 0);
-            break;
-        case 3:
-            if (confirm_selection(confirm_restore, "Yes - Restore sd-ext"))
-                nandroid_restore(file, 0, 0, 0, 0, 1, 0);
-            break;
-        case 4:
-            if (confirm_selection(confirm_restore, "Yes - Restore wimax"))
-                nandroid_restore(file, 0, 0, 0, 0, 0, 1);
-            break;
-    }
-
-/* ORIGINAL */
-/*
     static char* list[] = { "Restore boot",
                             "Restore system",
                             "Restore data",
@@ -844,8 +791,6 @@ void show_nandroid_advanced_restore_menu(const char* path)
                 nandroid_restore(file, 0, 0, 0, 0, 0, 1);
             break;
     }
-*/
-
 }
 
 void show_nandroid_menu()
@@ -858,12 +803,9 @@ void show_nandroid_menu()
     static char* list[] = { "backup",
                             "restore",
                             "advanced restore",
-/* DooMLoRD: FIX for SEMC devices */
-/*
                             "backup to internal sdcard",
                             "restore from internal sdcard",
                             "advanced restore from internal sdcard",
-*/
                             NULL
     };
 
@@ -998,13 +940,25 @@ void show_advanced_menu()
             {
                 ui_print("Outputting key codes.\n");
                 ui_print("Go back to end debugging.\n");
-                int key;
+                struct keyStruct{
+					int code;
+					int x;
+					int y;
+				}*key;
                 int action;
                 do
                 {
                     key = ui_wait_key();
-                    action = device_handle_key(key, 1);
-                    ui_print("Key: %d\n", key);
+					if(key->code == ABS_MT_POSITION_X)
+					{
+				        action = device_handle_mouse(key, 1);
+						ui_print("Touch: X: %d\tY: %d\n", key->x, key->y);
+					}
+					else
+					{
+				        action = device_handle_key(key->code, 1);
+						ui_print("Key: %x\n", key->code);
+					}
                 }
                 while (action != GO_BACK);
                 break;
@@ -1185,11 +1139,8 @@ void create_fstab()
          write_fstab_root("/boot", file);
     write_fstab_root("/cache", file);
     write_fstab_root("/data", file);
-/* DooMLoRD: FIX for SEMC devices */
-/*
     write_fstab_root("/datadata", file);
     write_fstab_root("/emmc", file);
-*/
     write_fstab_root("/system", file);
     write_fstab_root("/sdcard", file);
     write_fstab_root("/sd-ext", file);

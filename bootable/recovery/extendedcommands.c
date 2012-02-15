@@ -41,6 +41,7 @@
 #include "edify/expr.h"
 #include <libgen.h>
 #include "mtdutils/mtdutils.h"
+#include "bmlutils/bmlutils.h"
 
 
 int signature_check_enabled = 1;
@@ -420,7 +421,7 @@ int confirm_selection(const char* title, const char* confirm)
 
     char* confirm_headers[]  = {  title, "  THIS CAN NOT BE UNDONE.", "", NULL };
     char* items[] = { "No",
-                      confirm, //" Yes -- wipe partition",   // [7
+                      confirm, //" Yes -- wipe partition",   // [1]
                       NULL };
 
     int chosen_item = get_menu_selection(confirm_headers, items, 0, 0);
@@ -450,6 +451,18 @@ int format_device(const char *device, const char *path, const char *fs_type) {
         return -1;
     }
 
+    if (strcmp(fs_type, "rfs") == 0) {
+        if (ensure_path_unmounted(path) != 0) {
+            LOGE("format_volume failed to unmount \"%s\"\n", v->mount_point);
+            return -1;
+        }
+        if (0 != format_rfs_device(device, path)) {
+            LOGE("format_volume: format_rfs_device failed on %s\n", device);
+            return -1;
+        }
+        return 0;
+    }
+ 
     if (strcmp(v->mount_point, path) != 0) {
         return format_unknown_device(v->device, path, NULL);
     }
@@ -717,8 +730,8 @@ void show_partition_menu()
 
 void show_nandroid_advanced_restore_menu(const char* path)
 {
-    if (ensure_path_mounted("/sdcard") != 0) {
-        LOGE ("Can't mount /sdcard\n");
+    if (ensure_path_mounted(path) != 0) {
+        LOGE ("Can't mount sdcard\n");
         return;
     }
 
@@ -731,7 +744,9 @@ void show_nandroid_advanced_restore_menu(const char* path)
                                 NULL
     };
 
-    char* file = choose_file_menu("/sdcard/clockworkmod/backup/", NULL, advancedheaders);
+    char tmp[PATH_MAX];
+    sprintf(tmp, "%s/clockworkmod/backup/", path);
+    char* file = choose_file_menu(tmp, NULL, advancedheaders);
     if (file == NULL)
         return;
 
@@ -794,7 +809,6 @@ void show_nandroid_advanced_restore_menu(const char* path)
                             NULL
     };
     
-    char tmp[PATH_MAX];
     if (0 != get_partition_device("wimax", tmp)) {
         // disable wimax restore option
         list[5] = NULL;
@@ -854,7 +868,7 @@ void show_nandroid_menu()
     };
 
     if (volume_for_path("/emmc") == NULL)
-        INSTALL_MENU_ITEMS[3] = NULL;
+        list[3] = NULL;
 
     int chosen_item = get_menu_selection(headers, list, 0, 0);
     switch (chosen_item)

@@ -971,27 +971,8 @@ void show_advanced_menu()
             case 6:
             {
 
+                ui_print("Disabled for this device!\n");
 /*
-		char* printline;
-		FILE* f;
-		
-		//get device info
-		__system("parted /dev/block/mmcblk0 print > /tmp/parttableinfo1.log");
-
-		ui_print("Current partition table info\n\n");
-
-		ui_print("device:\n");
-		f = fopen("/tmp/parttableinfo1.log", "r");
-		if(f != NULL)
-		{
-			while(!feof(f)) {
-			fgets(printline,80,f);
-			ui_print("%s\n",printline);
-			}
-			fclose(f);
-		}
-		printline="";
-*/
                 if (confirm_selection("Confirm: SDCARD will be wiped!!", "Yes - Continue with SDCARD Partitioning"))
                 {
                 
@@ -1046,7 +1027,7 @@ void show_advanced_menu()
                     ui_print("An error occured while partitioning your SD Card. Please see /tmp/recovery.log for more details.\n");
 
 		}
-
+*/
                 break;
             }
             case 7:

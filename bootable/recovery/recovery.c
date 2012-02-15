@@ -732,17 +732,17 @@ prompt_and_wait() {
 		    {
 			case 0:
 			    {
-				poweroff=0;
+				__system("/sbin/reboot_system");
 				return;
 			    }
 			case 1:
 			    {
-				__system("reboot recovery");
+				__system("/sbin/reboot_recovery");
 				break;
 			    }
 			case 2:
 			    {
-				__system("reboot bootloader");
+				__system("/sbin/reboot_fastboot");
 				break;
 			    }
 		    }

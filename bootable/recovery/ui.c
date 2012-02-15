@@ -383,7 +383,8 @@ struct { int xL; int xR; } MENU_ICON[] = {
 
 	if (visible) {	
 		int position = gr_fb_height() - key->x;
-
+		// DEBUG code
+		/*
 		ui_print("[2] wdth: %d, hgth: %d, x: %d, y: %d, position: %d \n", gr_fb_width(), gr_fb_height(), key->x, key->y, position);
 		if(position > MENU_ICON[MENU_BACK].xL && position < MENU_ICON[MENU_BACK].xR)
 			ui_print("GO_BACK\n");
@@ -393,7 +394,7 @@ struct { int xL; int xR; } MENU_ICON[] = {
 			ui_print("HIGHLIGHT_UP\n");
 		else if(position > MENU_ICON[MENU_SELECT].xL && position < MENU_ICON[MENU_SELECT].xR)
 			ui_print("SELECT_ITEM\n");
-
+		*/
 		if(position > MENU_ICON[MENU_BACK].xL && position < MENU_ICON[MENU_BACK].xR)
 			return GO_BACK;
 		else if(position > MENU_ICON[MENU_DOWN].xL && position < MENU_ICON[MENU_DOWN].xR)

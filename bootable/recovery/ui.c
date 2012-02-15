@@ -596,7 +596,8 @@ static void *input_thread(void *cookie)
         }
 
         if (ev.value > 0 && device_reboot_now(key_pressed, ev.code)) {
-            reboot(RB_AUTOBOOT);
+            //reboot(RB_AUTOBOOT);
+	    __system("/sbin/reboot_system");
         }
     }
     return NULL;

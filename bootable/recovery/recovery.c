@@ -1002,7 +1002,19 @@ main(int argc, char **argv) {
     else
         ui_print("Shutting down...\n");
     sync();
-    reboot((!poweroff) ? RB_AUTOBOOT : RB_POWER_OFF);
+    //reboot((!poweroff) ? RB_AUTOBOOT : RB_POWER_OFF);
+    // FOR ROM MANAGER compatibility
+    if(!poweroff)
+	{
+	// reboot into system
+	__system("/sbin/reboot_system");
+	}
+    else
+	{
+	// shift to normal bootmode and power off
+	__system("/sbin/nbmode");
+	reboot(RB_POWER_OFF);
+	}
     return EXIT_SUCCESS;
 }
 

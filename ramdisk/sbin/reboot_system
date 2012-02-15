@@ -1,0 +1,5 @@
+#!/sbin/sh
+# wrapper to reboot into system
+/sbin/nbmode
+/sbin/reboot 0
+

@@ -1,0 +1,5 @@
+#!/sbin/sh
+# wrapper to reboot into recovery
+/sbin/rcmode
+/sbin/reboot 0
+

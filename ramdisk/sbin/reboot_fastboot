@@ -1,0 +1,5 @@
+#!/sbin/sh
+# wrapper to reboot into fastboot mode
+/sbin/fbmode
+/sbin/reboot 0
+

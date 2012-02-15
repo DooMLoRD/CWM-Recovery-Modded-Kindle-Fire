@@ -19,11 +19,17 @@
 
 //these are included in the original kernel's linux/input.h but are missing from AOSP
 
+/* 
+//FOR KindleFire
+gr_fb_width() is 1024
+gr_fb_height() is 600
+*/
+
 #define maxX 1024
 #define maxY 600
 
-#define MT_X(x) (x*gr_fb_width()/maxX)		//Define max X axis range device recognises instead of 1024
-#define MT_Y(y) (y*gr_fb_height()/maxY)		//Define max Y axis range device recognises instead of 1024
+#define MT_X(x) (x/4)		//Define max X axis range device recognises instead of 1024
+#define MT_Y(y) (y/4)		//Define max Y axis range device recognises instead of 1024
 
 #ifndef SYN_MT_REPORT
 #define SYN_MT_REPORT 2
@@ -57,7 +63,7 @@ static int gShowBackButton = 0;
 #endif
 
 #define MAX_COLS 96
-#define MAX_ROWS 32
+#define MAX_ROWS 30
 
 #define MENU_MAX_COLS 64
 #define MENU_MAX_ROWS 250
@@ -252,10 +258,10 @@ static void draw_screen_locked(void)
 	//In this case MENU_SELECT icon has maximum possible height.
 	int menu_max_height = gr_get_height(gMenuIcon[MENU_SELECT]);
 	struct { int x; int y; } MENU_ICON[] = {
-		{  gr_fb_width()/8,	(gr_fb_height() - menu_max_height/2) },
-		{  3*gr_fb_width()/8,	(gr_fb_height() - menu_max_height/2) },
-		{  5*gr_fb_width()/8,	(gr_fb_height() - menu_max_height/2) },
-		{  7*gr_fb_width()/8,	(gr_fb_height() - menu_max_height/2) }, 
+		{  gr_fb_width() - menu_max_height, 7*gr_fb_height()/8 },
+		{  gr_fb_width() - menu_max_height,	5*gr_fb_height()/8 },
+		{  gr_fb_width() - menu_max_height,	3*gr_fb_height()/8 },
+		{  gr_fb_width() - menu_max_height,	1*gr_fb_height()/8 }, 
 	};
 
     draw_background_locked(gCurrentIcon);
@@ -276,7 +282,7 @@ static void draw_screen_locked(void)
 			draw_icon_locked(gMenuIcon[MENU_SELECT], MENU_ICON[MENU_SELECT].x, MENU_ICON[MENU_SELECT].y );
             gr_color(MENU_TEXT_COLOR);
             gr_fill(0, (menu_top + menu_sel - menu_show_start) * CHAR_HEIGHT,
-                    gr_fb_width(), (menu_top + menu_sel - menu_show_start + 1)*CHAR_HEIGHT+1);
+                    gr_fb_width()-menu_max_height*2, (menu_top + menu_sel - menu_show_start + 1)*CHAR_HEIGHT+1);
 
             gr_color(HEADER_TEXT_COLOR);
             for (i = 0; i < menu_top; ++i) {
@@ -302,7 +308,7 @@ static void draw_screen_locked(void)
                 row++;
             }
             gr_fill(0, row*CHAR_HEIGHT+CHAR_HEIGHT/2-1,
-                    gr_fb_width(), row*CHAR_HEIGHT+CHAR_HEIGHT/2+1);
+                    gr_fb_width()-menu_max_height*2, row*CHAR_HEIGHT+CHAR_HEIGHT/2+1);
         }
 
         gr_color(NORMAL_TEXT_COLOR);
@@ -369,21 +375,34 @@ static void *progress_thread(void *cookie)
 int device_handle_mouse(struct keyStruct *key, int visible)
 {
 struct { int xL; int xR; } MENU_ICON[] = {
-	{  0, gr_fb_width()/4 },
-	{  gr_fb_width()/4, gr_fb_width()/2 },
-	{  gr_fb_width()/2, 3*gr_fb_width()/4 },
-	{  3*gr_fb_width()/4, gr_fb_width() }, 
+	{  3*gr_fb_height()/4, 4*gr_fb_height()/4 },
+	{  2*gr_fb_height()/4, 3*gr_fb_height()/4 },
+	{  1*gr_fb_height()/4, 2*gr_fb_height()/4 },
+	{  0*gr_fb_height()/4, 1*gr_fb_height()/4 }, 
 };
 
 	if (visible) {	
-		if(key->x > MENU_ICON[MENU_BACK].xL && key->x < MENU_ICON[MENU_BACK].xR)
+		int position = gr_fb_height() - key->x;
+
+		ui_print("[2] wdth: %d, hgth: %d, x: %d, y: %d, position: %d \n", gr_fb_width(), gr_fb_height(), key->x, key->y, position);
+		if(position > MENU_ICON[MENU_BACK].xL && position < MENU_ICON[MENU_BACK].xR)
+			ui_print("GO_BACK\n");
+		else if(position > MENU_ICON[MENU_DOWN].xL && position < MENU_ICON[MENU_DOWN].xR)
+			ui_print("HIGHLIGHT_DOWN\n");
+		else if(position > MENU_ICON[MENU_UP].xL && position < MENU_ICON[MENU_UP].xR)
+			ui_print("HIGHLIGHT_UP\n");
+		else if(position > MENU_ICON[MENU_SELECT].xL && position < MENU_ICON[MENU_SELECT].xR)
+			ui_print("SELECT_ITEM\n");
+
+		if(position > MENU_ICON[MENU_BACK].xL && position < MENU_ICON[MENU_BACK].xR)
 			return GO_BACK;
-		else if(key->x > MENU_ICON[MENU_DOWN].xL && key->x < MENU_ICON[MENU_DOWN].xR)
+		else if(position > MENU_ICON[MENU_DOWN].xL && position < MENU_ICON[MENU_DOWN].xR)
 			return HIGHLIGHT_DOWN;
-		else if(key->x > MENU_ICON[MENU_UP].xL && key->x < MENU_ICON[MENU_UP].xR)
+		else if(position > MENU_ICON[MENU_UP].xL && position < MENU_ICON[MENU_UP].xR)
 			return HIGHLIGHT_UP;
-		else if(key->x > MENU_ICON[MENU_SELECT].xL && key->x < MENU_ICON[MENU_SELECT].xR)
+		else if(position > MENU_ICON[MENU_SELECT].xL && position < MENU_ICON[MENU_SELECT].xR)
 			return SELECT_ITEM;
+
     }
 	return NO_ACTION;
 }
@@ -395,35 +414,36 @@ static void ui_handle_mouse_input(int* curPos)
 	//In this case MENU_SELECT icon has maximum possible height.
 	int menu_max_height = gr_get_height(gMenuIcon[MENU_SELECT]);
 	struct { int x; int y; int xL; int xR; } MENU_ICON[] = {
-		{  gr_fb_width()/8,	(gr_fb_height() - menu_max_height/2), 0, gr_fb_width()/4 },
-		{  3*gr_fb_width()/8,	(gr_fb_height() - menu_max_height/2), gr_fb_width()/4, gr_fb_width()/2 },
-		{  5*gr_fb_width()/8,	(gr_fb_height() - menu_max_height/2), gr_fb_width()/2, 3*gr_fb_width()/4 },
-		{  7*gr_fb_width()/8,	(gr_fb_height() - menu_max_height/2), 3*gr_fb_width()/4, gr_fb_width() }, 
+		{  gr_fb_width() - menu_max_height, 7*gr_fb_height()/8, 3*gr_fb_height()/4, 4*gr_fb_height()/4  },
+		{  gr_fb_width() - menu_max_height,	5*gr_fb_height()/8, 2*gr_fb_height()/4, 3*gr_fb_height()/4  },
+		{  gr_fb_width() - menu_max_height,	3*gr_fb_height()/8, 1*gr_fb_height()/4, 2*gr_fb_height()/4  },
+		{  gr_fb_width() - menu_max_height,	1*gr_fb_height()/8, 0*gr_fb_height()/4, 1*gr_fb_height()/4  },
 	};
 
   if (show_menu) {
     if (curPos[0] > 0) {
+		int position = gr_fb_height() - curPos[1];
 		//ui_print("Pressure:%d\tX:%d\tY:%d\n",mousePos[0],mousePos[1],mousePos[2]);
 		pthread_mutex_lock(&gUpdateMutex);
-		if(curPos[1] > MENU_ICON[MENU_BACK].xL && curPos[1] < MENU_ICON[MENU_BACK].xR && selMenuIcon != MENU_BACK) {
+		if(position > MENU_ICON[MENU_BACK].xL && position < MENU_ICON[MENU_BACK].xR && selMenuIcon != MENU_BACK) {
 			draw_icon_locked(gMenuIcon[selMenuIcon], MENU_ICON[selMenuIcon].x, MENU_ICON[selMenuIcon].y );
 			draw_icon_locked(gMenuIcon[MENU_BACK_M], MENU_ICON[MENU_BACK].x, MENU_ICON[MENU_BACK].y );
 			selMenuIcon = MENU_BACK;
 			gr_flip();
 		}
-		else if(curPos[1] > MENU_ICON[MENU_DOWN].xL && curPos[1] < MENU_ICON[MENU_DOWN].xR && selMenuIcon != MENU_DOWN) {			
+		else if(position > MENU_ICON[MENU_DOWN].xL && position < MENU_ICON[MENU_DOWN].xR && selMenuIcon != MENU_DOWN) {			
 			draw_icon_locked(gMenuIcon[selMenuIcon], MENU_ICON[selMenuIcon].x, MENU_ICON[selMenuIcon].y );
 			draw_icon_locked(gMenuIcon[MENU_DOWN_M], MENU_ICON[MENU_DOWN].x, MENU_ICON[MENU_DOWN].y);
 			selMenuIcon = MENU_DOWN;
 			gr_flip();
 		}
-		else if(curPos[1] > MENU_ICON[MENU_UP].xL && curPos[1] < MENU_ICON[MENU_UP].xR && selMenuIcon != MENU_UP) {
+		else if(position > MENU_ICON[MENU_UP].xL && position < MENU_ICON[MENU_UP].xR && selMenuIcon != MENU_UP) {
 			draw_icon_locked(gMenuIcon[selMenuIcon], MENU_ICON[selMenuIcon].x, MENU_ICON[selMenuIcon].y );			
 			draw_icon_locked(gMenuIcon[MENU_UP_M], MENU_ICON[MENU_UP].x, MENU_ICON[MENU_UP].y );
 			selMenuIcon = MENU_UP;
 			gr_flip();
 		}
-		else if(curPos[1] > MENU_ICON[MENU_SELECT].xL && curPos[1] < MENU_ICON[MENU_SELECT].xR && selMenuIcon != MENU_SELECT) {
+		else if(position > MENU_ICON[MENU_SELECT].xL && position < MENU_ICON[MENU_SELECT].xR && selMenuIcon != MENU_SELECT) {
 			draw_icon_locked(gMenuIcon[selMenuIcon], MENU_ICON[selMenuIcon].x, MENU_ICON[selMenuIcon].y );			
 			draw_icon_locked(gMenuIcon[MENU_SELECT_M], MENU_ICON[MENU_SELECT].x, MENU_ICON[MENU_SELECT].y );
 			selMenuIcon = MENU_SELECT;
